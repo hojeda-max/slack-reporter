@@ -148,7 +148,7 @@ def resolve_user_names(token: str, user_ids: set) -> dict:
     return names
 
 
-def send_dm_to_me(token: str, user_id: str, text: str):
+def send_dm(token: str, user_id: str, text: str):
     c = _c(token)
     try:
         resp       = c.conversations_open(users=user_id)
@@ -157,3 +157,44 @@ def send_dm_to_me(token: str, user_id: str, text: str):
         log.info("DM enviado a %s", user_id)
     except SlackApiError as e:
         log.error("Error enviando DM: %s", e)
+
+
+# Alias para compatibilidad
+send_dm_to_me = send_dm
+
+
+def list_bot_channels(token: str) -> list[dict]:
+    """Lista los canales públicos y privados donde el bot está invitado."""
+    c        = _c(token)
+    channels = []
+    cursor   = None
+
+    while True:
+        try:
+            kwargs = {
+                "types":             "public_channel,private_channel",
+                "limit":             200,
+                "exclude_archived":  True,
+            }
+            if cursor:
+                kwargs["cursor"] = cursor
+            resp = c.conversations_list(**kwargs)
+        except SlackApiError as e:
+            log.warning("list_bot_channels: %s", e)
+            break
+
+        for ch in resp.get("channels", []):
+            if not ch.get("is_member"):
+                continue
+            channels.append({
+                "id":      ch["id"],
+                "name":    ch.get("name", ch["id"]),
+                "is_im":   False,
+                "is_mpim": False,
+            })
+
+        cursor = resp.get("response_metadata", {}).get("next_cursor")
+        if not cursor:
+            break
+
+    return channels
