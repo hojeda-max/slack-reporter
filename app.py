@@ -8,6 +8,8 @@ import logging
 import os
 import threading
 import time
+from collections import defaultdict
+from datetime import date
 
 from flask import Flask, jsonify, request
 
@@ -22,11 +24,16 @@ log = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-_ADMIN_TOKEN        = os.environ.get("ADMIN_TOKEN", "")
+_ADMIN_TOKEN          = os.environ.get("ADMIN_TOKEN", "")
 _SLACK_SIGNING_SECRET = os.environ.get("SLACK_SIGNING_SECRET", "")
+_OWNER_ID             = os.environ.get("SLACK_OWNER_ID", "U0B5BKD8A2E")
+_DAILY_LIMIT          = 2
 
 if not _ADMIN_TOKEN:
     raise RuntimeError("ADMIN_TOKEN no configurado")
+
+# {user_id: (date, count)}
+_report_counter: dict = defaultdict(lambda: (None, 0))
 
 
 # ── Verificación de requests de Slack ────────────────────────────────────────
@@ -98,18 +105,33 @@ def slack_events():
             return jsonify({"ok": True})
 
         lookback = _parse_days(text)
+        bot_token = os.environ.get("SLACK_BOT_TOKEN", "")
 
         if lookback is None:
-            # Mensaje de ayuda
-            from slack_client import send_dm
-            bot_token = os.environ.get("SLACK_BOT_TOKEN", "")
             if bot_token:
+                from slack_client import send_dm
                 send_dm(bot_token, user_id,
                         "Hola! Para pedir tu reporte escribí:\n"
                         "• *reporte* — resumen del último día\n"
                         "• *reporte 7* — resumen de los últimos 7 días\n"
                         "• *reporte 30* — resumen del último mes")
             return jsonify({"ok": True})
+
+        # Límite diario para usuarios que no son el owner
+        if user_id != _OWNER_ID:
+            today = date.today()
+            last_date, count = _report_counter[user_id]
+            if last_date == today:
+                if count >= _DAILY_LIMIT:
+                    if bot_token:
+                        from slack_client import send_dm
+                        send_dm(bot_token, user_id,
+                                f"Ya usaste tus {_DAILY_LIMIT} reportes de hoy. "
+                                "Podés pedir más mañana.")
+                    return jsonify({"ok": True})
+                _report_counter[user_id] = (today, count + 1)
+            else:
+                _report_counter[user_id] = (today, 1)
 
         def _run():
             try:
