@@ -18,10 +18,10 @@ from slack_client import (
 
 log = logging.getLogger(__name__)
 
-_AI     = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+_AI     = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
 _HAIKU  = "claude-haiku-4-5-20251001"
 _SONNET = "claude-sonnet-4-6"
-_TOKEN  = os.environ["SLACK_USER_TOKEN"]
+_TOKEN  = os.environ.get("SLACK_USER_TOKEN", "")
 
 
 def triage_messages(messages: list[dict], channel_names: dict) -> dict:
@@ -101,6 +101,9 @@ Usá *negrita*, bullet points con •. Idioma español. Conciso."""
 
 
 def process_me(lookback_days: int = 1):
+    if not _TOKEN:
+        log.error("SLACK_USER_TOKEN no configurado.")
+        return
     log.info("Generando reporte (últimos %d días)…", lookback_days)
 
     now      = datetime.now(timezone.utc)
