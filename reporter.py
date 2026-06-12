@@ -7,6 +7,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 import anthropic
+import pytz
 
 from slack_client import (
     fetch_channel_messages,
@@ -24,6 +25,7 @@ _HAIKU      = "claude-haiku-4-5-20251001"
 _SONNET     = "claude-sonnet-4-6"
 _USER_TOKEN = os.environ.get("SLACK_USER_TOKEN", "")
 _BOT_TOKEN  = os.environ.get("SLACK_BOT_TOKEN", "")
+_TZ         = pytz.timezone("America/Argentina/Buenos_Aires")
 
 
 # ── Triage ────────────────────────────────────────────────────────────────────
@@ -178,8 +180,8 @@ def process_user_request(requesting_user_id: str, lookback_days: int = 1):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _time_range(lookback_days: int):
-    now      = datetime.now(timezone.utc)
-    since    = now - timedelta(days=lookback_days)
+    now   = datetime.now(_TZ)
+    since = now - timedelta(days=lookback_days)
     return now, since, since.timestamp(), now.timestamp()
 
 
