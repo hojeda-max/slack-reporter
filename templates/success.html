@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¡Conectado!</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         background: #f8f8f8; display: flex; align-items: center;
+         justify-content: center; min-height: 100vh; }
+  .card { background: white; border-radius: 12px; padding: 48px 40px;
+          max-width: 500px; width: 100%; box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+  h1 { font-size: 22px; margin-bottom: 8px; color: #1a1d23; }
+  p  { color: #666; font-size: 15px; line-height: 1.5; margin-bottom: 24px; }
+  .days-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+  .day-row   { display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+               border: 1px solid #e5e5e5; border-radius: 8px; transition: background .1s; }
+  .day-row:has(input[type=checkbox]:checked) { background: #faf0ff; border-color: #c084fc; }
+  .day-row label { flex: 1; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .day-row select { font-size: 13px; padding: 4px 8px; border: 1px solid #ddd;
+                    border-radius: 6px; background: white; cursor: pointer; }
+  .day-row select:disabled { opacity: .35; }
+  .btn { display: block; width: 100%; background: #4A154B; color: white; border: none;
+         padding: 14px; border-radius: 8px; font-size: 16px; font-weight: 600;
+         cursor: pointer; transition: background .15s; }
+  .btn:hover { background: #611f64; }
+  .spinner { text-align: center; padding: 20px 0; }
+  .spinner svg { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .msg-ok { background: #f0fdf4; border: 1px solid #86efac; color: #166534;
+            padding: 14px 16px; border-radius: 8px; font-size: 14px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="card">
+  {% if not is_new_user %}
+    <h1>Cuenta reconectada ✓</h1>
+    <p>Tu acceso se actualizó correctamente, <strong>{{ display_name }}</strong>.<br>
+       Los reportes seguirán enviándose según tu configuración actual.</p>
+    <p><a href="/mis-reportes?uid={{ slack_user_id }}" style="color:#4A154B;">Modificar horario →</a></p>
+  {% else %}
+    <h1>¡Hola, {{ display_name }}! 👋</h1>
+    <p>Elegí en qué días y a qué hora querés recibir tu resumen diario por DM.</p>
+
+    <div id="sched-form">
+      <div class="days-grid" id="days-grid">
+        {% set days = [("0","Lunes"),("1","Martes"),("2","Miércoles"),
+                       ("3","Jueves"),("4","Viernes"),("5","Sábado"),("6","Domingo")] %}
+        {% for val, label in days %}
+        <div class="day-row">
+          <input type="checkbox" id="d{{ val }}" value="{{ val }}"
+                 {% if val in ["0","1","2","3","4"] %}checked{% endif %}
+                 onchange="toggleHour(this)">
+          <label for="d{{ val }}">{{ label }}</label>
+          <select id="h{{ val }}" {% if val not in ["0","1","2","3","4"] %}disabled{% endif %}>
+            {% for h in range(6, 23) %}
+            <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ "%02d:00" % h }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+
+      <button class="btn" onclick="confirmSchedule()">Confirmar y activar</button>
+    </div>
+
+    <div id="spinner" class="spinner" style="display:none">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#4A154B" stroke-width="2">
+        <circle cx="12" cy="12" r="10" stroke-dasharray="31.4" stroke-dashoffset="10"/>
+      </svg>
+      <p style="margin-top:12px;color:#666">Guardando configuración…</p>
+    </div>
+
+    <div id="done" class="msg-ok" style="display:none">
+      ✓ ¡Listo! Vas a recibir tu primer reporte según el horario configurado.
+    </div>
+  {% endif %}
+</div>
+
+<script>
+function toggleHour(cb) {
+  document.getElementById("h" + cb.value).disabled = !cb.checked;
+}
+
+async function confirmSchedule() {
+  const schedule = {};
+  document.querySelectorAll("#days-grid input[type=checkbox]:checked").forEach(cb => {
+    const h = document.getElementById("h" + cb.value);
+    schedule[cb.value] = parseInt(h.value);
+  });
+  if (Object.keys(schedule).length === 0) {
+    alert("Seleccioná al menos un día.");
+    return;
+  }
+  document.getElementById("sched-form").style.display = "none";
+  document.getElementById("spinner").style.display = "block";
+
+  const resp = await fetch("/set-schedule", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uid: "{{ slack_user_id }}", schedule }),
+  });
+  document.getElementById("spinner").style.display = "none";
+  if (resp.ok) {
+    document.getElementById("done").style.display = "block";
+  } else {
+    document.getElementById("sched-form").style.display = "block";
+    alert("Error al guardar. Intentá de nuevo.");
+  }
+}
+</script>
+</body>
+</html>

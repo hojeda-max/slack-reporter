@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slack Reporter</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         background: #f8f8f8; display: flex; align-items: center;
+         justify-content: center; min-height: 100vh; }
+  .card { background: white; border-radius: 12px; padding: 48px 40px;
+          max-width: 460px; width: 100%; box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+  h1 { font-size: 24px; margin-bottom: 8px; color: #1a1d23; }
+  p  { color: #666; font-size: 15px; line-height: 1.5; margin-bottom: 24px; }
+  .privacy { background: #f0f4ff; border-left: 4px solid #4A154B;
+             padding: 14px 16px; border-radius: 4px; margin-bottom: 28px; font-size: 13px; }
+  .privacy ul { margin: 8px 0 0 16px; color: #555; }
+  .privacy li { margin-bottom: 4px; }
+  .btn { display: inline-flex; align-items: center; gap: 12px;
+         background: #4A154B; color: white; border: none; padding: 14px 24px;
+         border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer;
+         text-decoration: none; transition: background .15s; }
+  .btn:hover { background: #611f64; }
+  .btn svg { flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📊 Slack Reporter</h1>
+  <p>Recibí un resumen diario de tu actividad en Slack, directamente por DM.</p>
+
+  <div class="privacy">
+    <strong>¿Qué accede esta app?</strong>
+    <ul>
+      <li>Lee mensajes de tus canales para generar el resumen</li>
+      <li>No almacena el contenido de los mensajes</li>
+      <li>Solo te envía DMs a vos — nunca escribe en canales</li>
+      <li>Podés cancelar la suscripción en cualquier momento</li>
+    </ul>
+  </div>
+
+  <a href="/login" class="btn">
+    <svg width="20" height="20" viewBox="0 0 122.8 122.8" xmlns="http://www.w3.org/2000/svg">
+      <path d="M25.8 77.6c0 7.1-5.8 12.9-12.9 12.9S0 84.7 0 77.6s5.8-12.9 12.9-12.9h12.9v12.9zm6.5 0c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9v32.3c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V77.6z" fill="#E01E5A"/>
+      <path d="M45.2 25.8c-7.1 0-12.9-5.8-12.9-12.9S38.1 0 45.2 0s12.9 5.8 12.9 12.9v12.9H45.2zm0 6.5c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H12.9C5.8 58.1 0 52.3 0 45.2s5.8-12.9 12.9-12.9h32.3z" fill="#36C5F0"/>
+      <path d="M97 45.2c0-7.1 5.8-12.9 12.9-12.9s12.9 5.8 12.9 12.9-5.8 12.9-12.9 12.9H97V45.2zm-6.5 0c0 7.1-5.8 12.9-12.9 12.9s-12.9-5.8-12.9-12.9V12.9C64.7 5.8 70.5 0 77.6 0s12.9 5.8 12.9 12.9v32.3z" fill="#2EB67D"/>
+      <path d="M77.6 97c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9-12.9-5.8-12.9-12.9V97h12.9zm0-6.5c-7.1 0-12.9-5.8-12.9-12.9s5.8-12.9 12.9-12.9h32.3c7.1 0 12.9 5.8 12.9 12.9s-5.8 12.9-12.9 12.9H77.6z" fill="#ECB22E"/>
+    </svg>
+    Conectar con Slack
+  </a>
+</div>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mis reportes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+         background: #f8f8f8; display: flex; align-items: center;
+         justify-content: center; min-height: 100vh; }
+  .card { background: white; border-radius: 12px; padding: 48px 40px;
+          max-width: 500px; width: 100%; box-shadow: 0 2px 16px rgba(0,0,0,.08); }
+  h1 { font-size: 22px; margin-bottom: 8px; color: #1a1d23; }
+  p  { color: #666; font-size: 15px; margin-bottom: 24px; }
+  .days-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+  .day-row   { display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+               border: 1px solid #e5e5e5; border-radius: 8px; transition: background .1s; }
+  .day-row:has(input[type=checkbox]:checked) { background: #faf0ff; border-color: #c084fc; }
+  .day-row label { flex: 1; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .day-row select { font-size: 13px; padding: 4px 8px; border: 1px solid #ddd;
+                    border-radius: 6px; background: white; cursor: pointer; }
+  .day-row select:disabled { opacity: .35; }
+  .btn { display: block; width: 100%; background: #4A154B; color: white; border: none;
+         padding: 14px; border-radius: 8px; font-size: 16px; font-weight: 600;
+         cursor: pointer; transition: background .15s; }
+  .btn:hover { background: #611f64; }
+  .msg-ok { background: #f0fdf4; border: 1px solid #86efac; color: #166534;
+            padding: 14px 16px; border-radius: 8px; font-size: 14px; text-align: center;
+            display: none; margin-top: 16px; }
+  .unsub { text-align: center; margin-top: 20px; font-size: 13px; color: #999; }
+  .unsub a { color: #999; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Configurar reportes</h1>
+  <p>Hola, <strong>{{ user.display_name }}</strong>. Elegí cuándo recibir tu resumen.</p>
+
+  <div class="days-grid">
+    {% set days = [("0","Lunes"),("1","Martes"),("2","Miércoles"),
+                   ("3","Jueves"),("4","Viernes"),("5","Sábado"),("6","Domingo")] %}
+    {% for val, label in days %}
+    {% set cur_hour = current_schedule.get(val) %}
+    <div class="day-row">
+      <input type="checkbox" id="d{{ val }}" value="{{ val }}"
+             {% if cur_hour is not none %}checked{% endif %}
+             onchange="toggleHour(this)">
+      <label for="d{{ val }}">{{ label }}</label>
+      <select id="h{{ val }}" {% if cur_hour is none %}disabled{% endif %}>
+        {% for h in range(6, 23) %}
+        <option value="{{ h }}" {% if h == (cur_hour or 9) %}selected{% endif %}>
+          {{ "%02d:00" % h }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endfor %}
+  </div>
+
+  <button class="btn" onclick="saveSchedule()">Guardar cambios</button>
+  <div class="msg-ok" id="msg-ok">✓ Configuración guardada.</div>
+
+  <div class="unsub">
+    <a href="/unsubscribe?uid={{ user.slack_user_id }}">Cancelar suscripción</a>
+  </div>
+</div>
+
+<script>
+function toggleHour(cb) {
+  document.getElementById("h" + cb.value).disabled = !cb.checked;
+}
+
+async function saveSchedule() {
+  const schedule = {};
+  document.querySelectorAll(".days-grid input[type=checkbox]:checked").forEach(cb => {
+    schedule[cb.value] = parseInt(document.getElementById("h" + cb.value).value);
+  });
+  const resp = await fetch("/mis-reportes/guardar", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: "uid={{ user.slack_user_id }}&schedule=" + encodeURIComponent(JSON.stringify(schedule)),
+  });
+  if (resp.ok) {
+    document.getElementById("msg-ok").style.display = "block";
+    setTimeout(() => document.getElementById("msg-ok").style.display = "none", 3000);
+  } else {
+    alert("Error al guardar.");
+  }
+}
+</script>
+</body>
+</html>
